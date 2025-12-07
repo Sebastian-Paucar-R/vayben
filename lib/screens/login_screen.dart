@@ -8,88 +8,132 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  String _errorMessage = '';
+  bool _isLoading = false;
 
-  void _login() {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      setState(() => _errorMessage = 'Por favor, completa todos los campos.');
-      return;
+  void _login() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    // Simular login (mock)
+    await Future.delayed(const Duration(seconds: 1));
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/home');
+      setState(() => _isLoading = false);
     }
-    setState(() => _errorMessage = '');
-    Navigator.pushReplacementNamed(context, '/home');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              Image.asset('assets/logo_sinfondo.png', width: 180, height: 180),
-              const SizedBox(height: 20),
-              const Text('VAYBEN',
-                  style: TextStyle(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  Image.asset('assets/logo_sinfondo.png',
+                      width: 180, height: 180),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'VAYBEN',
+                    style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A5F7A))),
-              const Text('Movilidad Segura.',
-                  style: TextStyle(fontSize: 16, color: Color(0xFFFF6B35))),
-              const SizedBox(height: 40),
-              TextField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
+                      color: Color(0xFF1A5F7A),
+                    ),
+                  ),
+                  const Text(
+                    'Movilidad Segura.',
+                    style: TextStyle(fontSize: 16, color: Color(0xFFFF6B35)),
+                  ),
+                  const SizedBox(height: 40),
+                  TextFormField(
+                    controller: _emailController,
+                    validator: (value) =>
+                        value?.isEmpty ?? true ? 'Email requerido' : null,
+                    decoration: InputDecoration(
                       labelText: 'Correo Electrónico',
+                      prefixIcon: const Icon(Icons.email),
                       filled: true,
                       fillColor: Colors.grey[100],
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none))),
-              const SizedBox(height: 16),
-              TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    validator: (value) =>
+                        value?.isEmpty ?? true ? 'Contraseña requerida' : null,
+                    decoration: InputDecoration(
                       labelText: 'Contraseña',
+                      prefixIcon: const Icon(Icons.lock),
                       filled: true,
                       fillColor: Colors.grey[100],
                       border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _login,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1A5F7A),
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none))),
-              const SizedBox(height: 12),
-              if (_errorMessage.isNotEmpty)
-                Text(_errorMessage, style: const TextStyle(color: Colors.red)),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                  onPressed: _login,
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A5F7A),
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12))),
-                  child: const Text('Iniciar Sesión',
-                      style: TextStyle(fontSize: 18, color: Colors.white))),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/register'),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF1A5F7A),
-                      side:
-                          const BorderSide(color: Color(0xFF1A5F7A), width: 2),
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12))),
-                  child: const Text('Registrarse',
-                      style: TextStyle(fontSize: 18))),
-            ],
+                        ),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Iniciar Sesión',
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.white),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/register'),
+                    child: const Text(
+                      '¿No tienes cuenta? Registrarse',
+                      style: TextStyle(color: Color(0xFF1A5F7A)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }

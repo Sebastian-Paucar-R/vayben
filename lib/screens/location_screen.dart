@@ -1,18 +1,20 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
+
   @override
   State<LocationScreen> createState() => _LocationScreenState();
 }
 
 class _LocationScreenState extends State<LocationScreen> {
-  late GoogleMapController mapController;
+  GoogleMapController? mapController;
   Position? _currentPosition;
   bool _loading = true;
-
+  Set<Polyline> _polylines = {};
   final LatLng _tulcanCenter = const LatLng(0.8101, -77.7184);
 
   @override
@@ -22,11 +24,11 @@ class _LocationScreenState extends State<LocationScreen> {
   }
 
   Future<void> _getLocation() async {
+    setState(() => _loading = true);
+
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Activa la ubicación en tu dispositivo')));
+      _showSnackBar('Activa la ubicación en tu dispositivo');
       setState(() => _loading = false);
       return;
     }
@@ -35,18 +37,14 @@ class _LocationScreenState extends State<LocationScreen> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Permiso de ubicación denegado')));
+        _showSnackBar('Permiso de ubicación denegado');
         setState(() => _loading = false);
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Permiso de ubicación denegado permanentemente')));
+      _showSnackBar('Permiso denegado permanentemente. Abre ajustes.');
       setState(() => _loading = false);
       return;
     }
@@ -59,24 +57,44 @@ class _LocationScreenState extends State<LocationScreen> {
         ),
       );
 
-      if (!mounted) return;
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+          _loading = false;
+        });
 
-      setState(() {
-        _currentPosition = position;
-        _loading = false;
-      });
-
-      mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(position.latitude, position.longitude),
-            zoom: 16.0,
+        // Agregar polilínea ejemplo (ruta segura a centro Tulcán)
+        _polylines.add(
+          Polyline(
+            polylineId: const PolylineId('ruta_segura'),
+            points: [
+              LatLng(position.latitude, position.longitude),
+              _tulcanCenter,
+            ],
+            color: Colors.blue,
+            width: 5,
           ),
-        ),
-      );
+        );
+
+        mapController?.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: LatLng(position.latitude, position.longitude),
+              zoom: 16.0,
+            ),
+          ),
+        );
+      }
     } catch (e) {
-      if (!mounted) return;
+      _showSnackBar('Error obteniendo ubicación: $e');
       setState(() => _loading = false);
+    }
+  }
+
+  void _showSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -91,6 +109,8 @@ class _LocationScreenState extends State<LocationScreen> {
         backgroundColor: const Color(0xFF1A5F7A),
         title:
             const Text('MI UBICACIÓN', style: TextStyle(color: Colors.white)),
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: _loading
           ? const Center(
@@ -106,6 +126,7 @@ class _LocationScreenState extends State<LocationScreen> {
               ),
               myLocationEnabled: true,
               myLocationButtonEnabled: true,
+              polylines: _polylines,
               markers: _currentPosition != null
                   ? {
                       Marker(
@@ -116,8 +137,15 @@ class _LocationScreenState extends State<LocationScreen> {
                         icon: BitmapDescriptor.defaultMarkerWithHue(
                             BitmapDescriptor.hueBlue),
                       ),
+                      Marker(
+                        markerId: const MarkerId('destino'),
+                        position: _tulcanCenter,
+                        infoWindow: const InfoWindow(title: 'Centro Tulcán'),
+                        icon: BitmapDescriptor.defaultMarkerWithHue(
+                            BitmapDescriptor.hueGreen),
+                      ),
                     }
-                  : {},
+                  : null,
             ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF1A5F7A),

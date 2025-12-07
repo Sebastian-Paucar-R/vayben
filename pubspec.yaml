@@ -1,23 +1,26 @@
 name: vayben
-description: Aplicación de movilidad segura para Tulcán - UPEC 2025B
+description: Aplicación de movilidad segura para Tulcán - UPEC 2025.
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.2.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
-  google_maps_flutter: ^2.9.0
-  geolocator: ^13.0.1
-  permission_handler: ^11.3.1
-  image_picker: ^1.1.2
-  flutter_stripe: ^10.2.0
-  http: ^1.2.2
+  cupertino_icons: ^1.0.2
+  google_maps_flutter: ^2.5.0
+  geolocator: ^10.1.0
+  image_picker: ^1.0.4
+  permission_handler: ^11.0.1  # Para permisos en iOS/Android
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
