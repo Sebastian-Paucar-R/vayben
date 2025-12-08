@@ -24,19 +24,72 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
+
     setState(() => _isLoading = true);
-    // Simular registro
-    await Future.delayed(const Duration(seconds: 1));
+
+    // Simulación de registro (puedes conectar Firebase después)
+    await Future.delayed(const Duration(seconds: 2));
+
     if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Registro exitoso! Bienvenido a VAYBEN'),
+          backgroundColor: Colors.green,
+        ),
+      );
       Navigator.pushReplacementNamed(context, '/home');
-      setState(() => _isLoading = false);
     }
+
+    setState(() => _isLoading = false);
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscureText = false,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(30), // ← Reemplaza withOpacity
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(40),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.white.withAlpha(200)),
+          prefixIcon: Icon(icon, color: Colors.white.withAlpha(220)),
+          border: InputBorder.none,
+          errorStyle: const TextStyle(color: Colors.orange),
+        ),
+        validator: validator ??
+            (value) {
+              if (value == null || value.isEmpty) {
+                return '$label es requerido';
+              }
+              return null;
+            },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A5F7A),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -45,95 +98,146 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  Image.asset('assets/logo_sinfondo.png',
-                      width: 100, height: 100),
-                  const SizedBox(height: 30),
-                  _buildField(_nameController, 'Nombre', Icons.person),
-                  const SizedBox(height: 16),
-                  _buildField(
-                      _lastNameController, 'Apellido', Icons.person_outline),
-                  const SizedBox(height: 16),
-                  _buildField(
-                      _emailController, 'Correo Electrónico', Icons.email),
-                  const SizedBox(height: 16),
-                  _buildField(_passwordController, 'Contraseña', Icons.lock,
-                      obscure: true),
-                  const SizedBox(height: 16),
-                  _buildField(_confirmPasswordController,
-                      'Confirmar Contraseña', Icons.lock_outline,
-                      obscure: true),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _register,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF1A5F7A),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    Color(0xFF1A5F7A)),
-                              ),
-                            )
-                          : const Text(
-                              'Registrarse',
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF1A5F7A),
+              Color(0xFF0D3747),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    // Logo
+                    Image.asset(
+                      'assets/logo_sinfondo.png',
+                      width: 120,
+                      height: 120,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.directions_car,
+                          size: 100,
+                          color: Colors.white),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 30),
+
+                    const Text(
+                      'CREAR CUENTA',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Regístrate para empezar a moverte seguro',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withAlpha(220),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+
+                    // Campos de texto
+                    _buildTextField(
+                      controller: _nameController,
+                      label: 'Nombre',
+                      icon: Icons.person_outline,
+                    ),
+                    _buildTextField(
+                      controller: _lastNameController,
+                      label: 'Apellido',
+                      icon: Icons.person_outline,
+                    ),
+                    _buildTextField(
+                      controller: _emailController,
+                      label: 'Correo Electrónico',
+                      icon: Icons.email_outlined,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'El correo es requerido';
+                        }
+                        if (!value.contains('@')) {
+                          return 'Ingresa un correo válido';
+                        }
+                        return null;
+                      },
+                    ),
+                    _buildTextField(
+                      controller: _passwordController,
+                      label: 'Contraseña',
+                      icon: Icons.lock_outline,
+                      obscureText: true,
+                    ),
+                    _buildTextField(
+                      controller: _confirmPasswordController,
+                      label: 'Confirmar Contraseña',
+                      icon: Icons.lock_outline,
+                      obscureText: true,
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // Botón Registrarse
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _register,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF6B35),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 8,
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 3,
+                                ),
+                              )
+                            : const Text(
+                                'REGISTRARSE',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        '¿Ya tienes cuenta? Iniciar Sesión',
+                        style: TextStyle(
+                          color: Colors.white.withAlpha(230),
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildField(
-    TextEditingController controller,
-    String label,
-    IconData icon, {
-    bool obscure = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4),
-        ],
-      ),
-      child: TextFormField(
-        controller: controller,
-        obscureText: obscure,
-        validator: (value) =>
-            value?.isEmpty ?? true ? '$label requerido' : null,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, color: const Color(0xFF1A5F7A)),
-          border: InputBorder.none,
-          labelStyle:
-              TextStyle(color: const Color(0xFF1A5F7A).withOpacity(0.7)),
         ),
       ),
     );

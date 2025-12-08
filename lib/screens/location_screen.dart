@@ -14,7 +14,7 @@ class _LocationScreenState extends State<LocationScreen> {
   GoogleMapController? mapController;
   Position? _currentPosition;
   bool _loading = true;
-  Set<Polyline> _polylines = {};
+  final Set<Polyline> _polylines = {};
   final LatLng _tulcanCenter = const LatLng(0.8101, -77.7184);
 
   @override
@@ -51,40 +51,37 @@ class _LocationScreenState extends State<LocationScreen> {
 
     try {
       Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.high),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentPosition = position;
+        _loading = false;
+      });
+
+      _polylines.add(
+        Polyline(
+          polylineId: const PolylineId('ruta_segura'),
+          points: [
+            LatLng(position.latitude, position.longitude),
+            _tulcanCenter,
+          ],
+          color: Colors.blue,
+          width: 5,
         ),
       );
 
-      if (mounted) {
-        setState(() {
-          _currentPosition = position;
-          _loading = false;
-        });
-
-        // Agregar polilínea ejemplo (ruta segura a centro Tulcán)
-        _polylines.add(
-          Polyline(
-            polylineId: const PolylineId('ruta_segura'),
-            points: [
-              LatLng(position.latitude, position.longitude),
-              _tulcanCenter,
-            ],
-            color: Colors.blue,
-            width: 5,
+      mapController?.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(position.latitude, position.longitude),
+            zoom: 16.0,
           ),
-        );
-
-        mapController?.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: LatLng(position.latitude, position.longitude),
-              zoom: 16.0,
-            ),
-          ),
-        );
-      }
+        ),
+      );
     } catch (e) {
       _showSnackBar('Error obteniendo ubicación: $e');
       setState(() => _loading = false);
@@ -98,8 +95,23 @@ class _LocationScreenState extends State<LocationScreen> {
     }
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
+  Set<Marker> _buildMarkers() {
+    if (_currentPosition == null) return {};
+    return {
+      Marker(
+        markerId: const MarkerId('mi_ubicacion'),
+        position:
+            LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+        infoWindow: const InfoWindow(title: 'Estás aquí'),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      ),
+      Marker(
+        markerId: const MarkerId('destino'),
+        position: _tulcanCenter,
+        infoWindow: const InfoWindow(title: 'Centro Tulcán'),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+      ),
+    };
   }
 
   @override
@@ -109,14 +121,12 @@ class _LocationScreenState extends State<LocationScreen> {
         backgroundColor: const Color(0xFF1A5F7A),
         title:
             const Text('MI UBICACIÓN', style: TextStyle(color: Colors.white)),
-        foregroundColor: Colors.white,
-        elevation: 0,
       ),
       body: _loading
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFF1A5F7A)))
           : GoogleMap(
-              onMapCreated: _onMapCreated,
+              onMapCreated: (controller) => mapController = controller,
               initialCameraPosition: CameraPosition(
                 target: _currentPosition != null
                     ? LatLng(
@@ -127,25 +137,7 @@ class _LocationScreenState extends State<LocationScreen> {
               myLocationEnabled: true,
               myLocationButtonEnabled: true,
               polylines: _polylines,
-              markers: _currentPosition != null
-                  ? {
-                      Marker(
-                        markerId: const MarkerId('mi_ubicacion'),
-                        position: LatLng(_currentPosition!.latitude,
-                            _currentPosition!.longitude),
-                        infoWindow: const InfoWindow(title: 'Estás aquí'),
-                        icon: BitmapDescriptor.defaultMarkerWithHue(
-                            BitmapDescriptor.hueBlue),
-                      ),
-                      Marker(
-                        markerId: const MarkerId('destino'),
-                        position: _tulcanCenter,
-                        infoWindow: const InfoWindow(title: 'Centro Tulcán'),
-                        icon: BitmapDescriptor.defaultMarkerWithHue(
-                            BitmapDescriptor.hueGreen),
-                      ),
-                    }
-                  : null,
+              markers: _buildMarkers(),
             ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF1A5F7A),

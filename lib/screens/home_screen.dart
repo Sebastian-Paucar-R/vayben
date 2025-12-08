@@ -44,7 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
               subtitle: const Text('Usuario Mock: user@example.com'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navegar a perfil detallado
               },
             ),
             ListTile(
