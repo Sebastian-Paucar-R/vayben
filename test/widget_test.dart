@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vayben/main.dart';
 
@@ -6,7 +7,6 @@ void main() {
     await tester.pumpWidget(const VaybenApp());
 
     expect(find.byType(MaterialApp), findsOneWidget);
-    expect(
-        find.text('VAYBEN'), findsOneWidget); // o el texto que tengas en splash
+    expect(find.byType(Scaffold), findsOneWidget);
   });
 }

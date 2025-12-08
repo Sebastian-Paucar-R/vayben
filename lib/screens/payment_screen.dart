@@ -9,28 +9,75 @@ class PaymentScreen extends StatefulWidget {
   State<PaymentScreen> createState() => _PaymentScreenState();
 }
 
-class _PaymentScreenState extends State<PaymentScreen>
-    with SingleTickerProviderStateMixin {
-  File? _image;
-  late AnimationController _uploadAnimation;
-  final ImagePicker _picker = ImagePicker();
+class _PaymentScreenState extends State<PaymentScreen> {
+  File? _qrImage;
+  File? _comprobanteImage;
 
-  @override
-  void initState() {
-    super.initState();
-    _uploadAnimation = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
+  Future<void> _pickImage(bool isQR) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.camera) ??
+        await picker.pickImage(source: ImageSource.gallery);
+
+    if (picked != null && mounted) {
+      setState(() {
+        if (isQR) {
+          _qrImage = File(picked.path);
+        } else {
+          _comprobanteImage = File(picked.path);
+        }
+      });
+    }
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    final pickedFile =
-        await _picker.pickImage(source: source, imageQuality: 85);
-    if (pickedFile != null) {
-      setState(() => _image = File(pickedFile.path));
-      _uploadAnimation.forward().then((_) => _uploadAnimation.reverse());
-    }
+  Widget _buildUploadBox({
+    required bool isQR,
+    required String title,
+    required File? image,
+  }) {
+    return GestureDetector(
+      onTap: () => _pickImage(isQR),
+      child: Container(
+        width: 280,
+        height: 280,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.grey.shade400, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(20), // ← Aquí ya no hay withOpacity
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: image != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Image.file(image, fit: BoxFit.cover),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isQR ? Icons.qr_code_scanner : Icons.cloud_upload,
+                    size: 80,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+      ),
+    );
   }
 
   @override
@@ -44,114 +91,38 @@ class _PaymentScreenState extends State<PaymentScreen>
         elevation: 0,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'ESCANEAR QR',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 20),
-                  Image.asset('assets/qr_code.png', width: 220, height: 220),
-                  const SizedBox(height: 50),
-                  const Text(
-                    'O SUBIR COMPROBANTE',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 20),
-                  AnimatedBuilder(
-                    animation: _uploadAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: 1.0 + (_uploadAnimation.value * 0.05),
-                        child: _image != null
-                            ? Container(
-                                width: 300,
-                                height: 300,
-                                decoration: BoxDecoration(
-                                  border:
-                                      Border.all(color: Colors.green, width: 4),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.file(_image!, fit: BoxFit.cover),
-                                ),
-                              )
-                            : Container(
-                                width: 300,
-                                height: 300,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(Icons.image,
-                                    size: 80, color: Colors.grey),
-                              ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 30),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () => _pickImage(ImageSource.camera),
-                        icon: const Icon(Icons.camera_alt),
-                        label: const Text('Cámara'),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green),
-                      ),
-                      const SizedBox(width: 20),
-                      ElevatedButton.icon(
-                        onPressed: () => _pickImage(ImageSource.gallery),
-                        icon: const Icon(Icons.photo_library),
-                        label: const Text('Galería'),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue),
-                      ),
-                    ],
-                  ),
-                  if (_image != null) ...[
-                    const SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                '¡Pago verificado! Gracias por usar VAYBEN'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.check),
-                      label: const Text('Confirmar pago'),
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green),
-                    ),
-                  ],
-                ],
-              ),
+        width: double.infinity,
+        color: Colors.grey[50],
+        child: Column(
+          children: [
+            const SizedBox(height: 30),
+            const Text(
+              'ESCANEAR QR',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87),
             ),
-          ),
+            const SizedBox(height: 16),
+            _buildUploadBox(
+                isQR: true, title: 'Toca para subir QR', image: _qrImage),
+            const SizedBox(height: 50),
+            const Text(
+              'O SUBIR COMPROBANTE',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87),
+            ),
+            const SizedBox(height: 16),
+            _buildUploadBox(
+                isQR: false,
+                title: 'Toca para subir comprobante',
+                image: _comprobanteImage),
+            const Spacer(),
+          ],
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _uploadAnimation.dispose();
-    super.dispose();
   }
 }

@@ -8,8 +8,8 @@ import 'screens/home_screen.dart';
 import 'screens/taxi_screen.dart';
 import 'screens/share_route_screen.dart';
 import 'screens/payment_screen.dart';
-import 'screens/location_screen.dart';
 import 'screens/route_screen.dart';
+import 'screens/terms_conditions_screen.dart';
 
 void main() {
   runApp(
@@ -34,7 +34,6 @@ class VaybenApp extends StatelessWidget {
             colorScheme:
                 ColorScheme.fromSeed(seedColor: const Color(0xFF1A5F7A)),
             useMaterial3: true,
-            fontFamily: 'Roboto',
           ),
           darkTheme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
@@ -53,8 +52,8 @@ class VaybenApp extends StatelessWidget {
             '/taxi': (context) => const TaxiScreen(),
             '/share': (context) => const ShareRouteScreen(),
             '/payment': (context) => const PaymentScreen(),
-            '/location': (context) => const LocationScreen(),
             '/route': (context) => const RouteScreen(),
+            '/terms': (context) => const TermsConditionsScreen(),
           },
         );
       },

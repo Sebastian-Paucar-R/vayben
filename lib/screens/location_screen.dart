@@ -135,7 +135,7 @@ class _LocationScreenState extends State<LocationScreen> {
                 zoom: 15.0,
               ),
               myLocationEnabled: true,
-              myLocationButtonEnabled: true,
+              myLocationButtonEnabled: false, // ← Evita solapamiento
               polylines: _polylines,
               markers: _buildMarkers(),
             ),
@@ -144,6 +144,8 @@ class _LocationScreenState extends State<LocationScreen> {
         onPressed: _getLocation,
         child: const Icon(Icons.my_location, color: Colors.white),
       ),
+      floatingActionButtonLocation:
+          FloatingActionButtonLocation.endFloat, // ← Posición derecha abajo
     );
   }
 }

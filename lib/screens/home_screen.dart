@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../theme_provider.dart';
 import 'taxi_screen.dart';
 import 'share_route_screen.dart';
 import 'payment_screen.dart';
-import 'location_screen.dart';
 import 'route_screen.dart';
+import 'terms_conditions_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,18 +18,72 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  late PageController _pageController;
+  GoogleMapController? mapController;
+  Position? _currentPosition;
+  bool _loadingLocation = true;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _getCurrentLocation();
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
+  Future<void> _getCurrentLocation() async {
+    setState(() => _loadingLocation = true);
+
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      _showSnackBar('Activa GPS en Ajustes > Ubicación');
+      setState(() => _loadingLocation = false);
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        _showSnackBar(
+            'Permiso denegado. Ve a Ajustes > VAYBEN > Ubicación > Permitir');
+        setState(() => _loadingLocation = false);
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _showSnackBar('Permiso bloqueado. Abre Ajustes > VAYBEN > Ubicación');
+      setState(() => _loadingLocation = false);
+      return;
+    }
+
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.high),
+      );
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+          _loadingLocation = false;
+        });
+        mapController?.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+                target: LatLng(position.latitude, position.longitude),
+                zoom: 16),
+          ),
+        );
+      }
+    } catch (e) {
+      _showSnackBar('Error: $e. Verifica GPS');
+      setState(() => _loadingLocation = false);
+    }
+  }
+
+  void _showSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   void _showSettings(BuildContext context) {
@@ -41,23 +97,26 @@ class _HomeScreenState extends State<HomeScreen> {
             ListTile(
               leading: const Icon(Icons.person),
               title: const Text('Perfil'),
-              subtitle: const Text('Usuario Mock: user@example.com'),
-              onTap: () {
-                Navigator.pop(context);
-              },
+              onTap: () => Navigator.pop(context),
+            ),
+            SwitchListTile(
+              value: themeProvider.isDarkMode,
+              onChanged: (value) => themeProvider.toggleTheme(value),
+              title: const Text('Modo Oscuro'),
+              secondary: Icon(themeProvider.isDarkMode
+                  ? Icons.dark_mode
+                  : Icons.light_mode),
             ),
             ListTile(
-              leading: Icon(themeProvider.isDarkMode
-                  ? Icons.light_mode
-                  : Icons.dark_mode),
-              title: const Text('Modo Oscuro'),
-              trailing: Switch(
-                value: themeProvider.isDarkMode,
-                onChanged: (value) {
-                  themeProvider.toggleTheme(value);
-                },
-              ),
-              onTap: () => Navigator.pop(context),
+              leading: const Icon(Icons.description),
+              title: const Text('Términos y Condiciones'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const TermsConditionsScreen()));
+              },
             ),
             ListTile(
               leading: const Icon(Icons.logout),
@@ -75,21 +134,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      _buildDashboard(),
-      const TaxiScreen(),
-      const ShareRouteScreen(),
-      const PaymentScreen(),
-      const LocationScreen(),
-      const RouteScreen(),
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('VAYBEN'),
         backgroundColor: const Color(0xFF1A5F7A),
         foregroundColor: Colors.white,
-        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -97,22 +146,54 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) => setState(() => _currentIndex = index),
-        children: pages,
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          // Inicio: Mapa
+          _loadingLocation
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF1A5F7A)))
+              : GoogleMap(
+                  onMapCreated: (controller) => mapController = controller,
+                  initialCameraPosition: CameraPosition(
+                    target: _currentPosition != null
+                        ? LatLng(_currentPosition!.latitude,
+                            _currentPosition!.longitude)
+                        : const LatLng(0.8101, -77.7184), // Tulcán
+                    zoom: 15,
+                  ),
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: false, // Evita superposición
+                  zoomControlsEnabled: false, // Gestos manuales
+                  markers: _currentPosition != null
+                      ? {
+                          Marker(
+                            markerId: const MarkerId('ubicacion_actual'),
+                            position: LatLng(_currentPosition!.latitude,
+                                _currentPosition!.longitude),
+                            infoWindow: const InfoWindow(title: 'Estás aquí'),
+                          ),
+                        }
+                      : {},
+                ),
+          const TaxiScreen(),
+          const ShareRouteScreen(),
+          const PaymentScreen(),
+          const RouteScreen(),
+        ],
       ),
+      floatingActionButton: _currentIndex == 0
+          ? FloatingActionButton(
+              backgroundColor: const Color(0xFF1A5F7A),
+              onPressed: _getCurrentLocation,
+              child: const Icon(Icons.my_location, color: Colors.white),
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() => _currentIndex = index);
-          _pageController.animateToPage(
-            index,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
-        },
+        onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
         selectedItemColor: const Color(0xFF1A5F7A),
         unselectedItemColor: Colors.grey,
         items: const [
@@ -120,50 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.local_taxi), label: 'Taxi'),
           BottomNavigationBarItem(icon: Icon(Icons.share), label: 'Compartir'),
           BottomNavigationBarItem(icon: Icon(Icons.payment), label: 'Pago'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.location_on), label: 'Ubicación'),
           BottomNavigationBarItem(icon: Icon(Icons.route), label: 'Ruta'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDashboard() {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(
-              3,
-              (index) => Chip(
-                label: const Text('NOTIFICACIÓN',
-                    style:
-                        TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                backgroundColor: Colors.grey[300],
-              ),
-            ),
-          ),
-          const SizedBox(height: 30),
-          Image.asset('assets/logo_sinfondo.png', width: 80, height: 80),
-          const SizedBox(height: 30),
-          const Text(
-            'Bienvenido a Vayben',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          const Text('Elige un servicio desde la barra inferior.'),
-          const Spacer(),
-          ElevatedButton.icon(
-            onPressed: () => _pageController.animateToPage(4,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut), // A Ubicación
-            icon: const Icon(Icons.location_on),
-            label: const Text('Ver mi ubicación actual'),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1A5F7A)),
-          ),
         ],
       ),
     );
