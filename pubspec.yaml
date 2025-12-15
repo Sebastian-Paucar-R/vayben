@@ -1,5 +1,5 @@
-name: vayben  # Cambia a esto
-description: A new Flutter project.
+name: vayben
+description: Aplicación de movilidad segura para Tulcán - UPEC 2025
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -16,6 +16,7 @@ dependencies:
   geolocator: ^12.0.0
   get_it: ^7.6.7
   shared_preferences: ^2.3.2
+  share_plus: ^10.0.3  # Para compartir rutas reales
 
 dev_dependencies:
   flutter_test:
