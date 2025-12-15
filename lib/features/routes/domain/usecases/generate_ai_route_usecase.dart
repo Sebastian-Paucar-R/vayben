@@ -1,12 +1,13 @@
-import 'package:vayben_new/features/routes/data/models/route_model.dart';
-import 'package:vayben_new/features/routes/data/repositories/ai_route_repository.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:vayben/features/routes/data/models/route_model.dart';
+import 'package:vayben/features/routes/data/repositories/ai_route_repository.dart';
 
-class GenerateAiRouteUseCase {
+class GenerateAiRouteUsecase {
   final AiRouteRepository repository;
 
-  GenerateAiRouteUseCase(this.repository);
+  GenerateAiRouteUsecase(this.repository);
 
-  Future<RouteModel> call(double lat, double lng, String destination) async {
-    return await repository.generateRoute(lat, lng, destination);
+  Future<RouteModel> call(LatLng start, LatLng end) async {
+    return await repository.generateAiRoute(start, end);
   }
 }

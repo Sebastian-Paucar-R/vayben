@@ -1,24 +1,27 @@
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart'; // Para LatLng
 
 class RouteModel {
-  final List<LatLng> points;
-  final double duration;
-  final double safetyScore;
+  final List<LatLng> points; // Puntos de la ruta
+  final double distance; // En km
+  final double duration; // En minutos
+  final String safetyLevel; // e.g., 'high', 'medium'
 
   RouteModel({
     required this.points,
+    required this.distance,
     required this.duration,
-    required this.safetyScore,
+    required this.safetyLevel,
   });
 
+  // From JSON si usas API
   factory RouteModel.fromJson(Map<String, dynamic> json) {
-    var list = json['points'] as List<dynamic>? ?? [];
-    List<LatLng> pointsList = list.map((i) => LatLng(i['lat'] as double, i['lng'] as double)).toList();
-
     return RouteModel(
-      points: pointsList,
-      duration: (json['duration'] as num?)?.toDouble() ?? 0.0,
-      safetyScore: (json['safetyScore'] as num?)?.toDouble() ?? 0.0,
+      points: (json['points'] as List)
+          .map((p) => LatLng(p['lat'], p['lng']))
+          .toList(),
+      distance: json['distance'],
+      duration: json['duration'],
+      safetyLevel: json['safetyLevel'],
     );
   }
 }

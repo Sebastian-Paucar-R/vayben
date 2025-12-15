@@ -1,10 +1,10 @@
-name: vayben_new
+name: vayben  # Cambia a esto
 description: A new Flutter project.
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.4.0 <4.0.0'   # ¡Esto es lo que faltaba!
+  sdk: '>=3.4.0 <4.0.0'
 
 dependencies:
   flutter:

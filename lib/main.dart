@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:vayben_new/core/theme/app_theme.dart';
-import 'package:vayben_new/features/home/presentation/screens/home_screen.dart';
+import 'package:vayben/core/theme/app_theme.dart';
+import 'package:vayben/features/home/presentation/screens/home_screen.dart';
 import 'package:get_it/get_it.dart';
-import 'package:vayben_new/shared/services/location_service.dart';
-import 'package:vayben_new/shared/services/map_service.dart';
+import 'package:vayben/shared/services/location_service.dart';
+import 'package:vayben/shared/services/map_service.dart';
 
 final GetIt getIt = GetIt.instance;
 
